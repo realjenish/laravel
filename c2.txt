@@ -1,0 +1,431 @@
+
+Make Controller: php artisan make:controller c1
+
+Make Model With Migration File: php artisan make:model Student -m
+
+Migrate File: php aritsan migrate
+
+// Controller
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\login;
+use App\Models\product;
+
+class c1 extends Controller
+{
+    public function Add(Request $res)
+    {
+        $p = new product;
+        $p->P_Name = $res->input('pname');
+        $p->P_Brand = $res->input('pbrand');
+        $p->P_Price = $res->input('pprice');
+        $p->save();
+        return redirect('/disp');
+    }
+    public function display()
+    {
+        $products = product::all();
+        $data = compact('products');
+        return view('/display')->with($data);
+    }
+    public function editPro(Request $res)
+    {
+        $product = product::find($res->get('id'));
+        $data = compact('product');
+        return view('/edit')->with($data);
+    }
+    public function updatePro(Request $res)
+    {
+        $p = product::find($res->input('pid'));
+        $p->P_Name = $res->input('pname');
+        $p->P_Brand = $res->input('pbrand');
+        $p->P_Price = $res->input('pprice');
+        $p->save();
+        return redirect('/disp');
+    }
+    public function delPro(Request $res)
+    {
+        product::find($res->get('id'))->delete();
+        return redirect('/disp');
+    }
+    public function Register(Request $res)
+    {
+        $user = new login;
+        $user->U_Name = $res->input('uname');
+        $user->U_Pwd = $res->input('pwd');
+        $user->save();
+        return redirect('/welcome');
+    }
+    public function Login(Request $res)
+    {
+        $data = login::where('U_Name','=',$res->input('uname'))->get();
+        foreach ($data as $d) {
+            if($d->U_Pwd == $res->input('pwd')){
+                return redirect('/home');
+            }
+            else{
+                echo "Login Failed";
+                echo "<br>";
+                echo "<a href='/welcome'>Login</a>";
+            }
+        }
+    }
+}
+
+//Model
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class login extends Model
+{
+    use HasFactory;
+    protected $table = "logins";
+    protected $primaryKey = 'id';
+}
+
+// Migration File
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('products', function (Blueprint $table) {
+            $table->id();
+            $table->string('P_Name');
+            $table->string('P_Brand');
+            $table->string('P_Price');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('products');
+    }
+};
+
+// Very Very Very Important Dipen Ane Vilash Bhulta nai Dofao
+// Web.php
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\c1;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/welcome', function () {
+    return view('welcome');
+});
+Route::get('/reg', function () {
+    return view('register');
+});
+
+Route::get('/home', function () {
+    return view('home');
+});
+
+Route::post('/add',[c1::class,'Add']);
+Route::get('/disp',[c1::class,'display']);
+Route::get('/edit',[c1::class,'editPro']);
+Route::post('/updt',[c1::class,'updatePro']);
+Route::get('/del',[c1::class,'delPro']);
+Route::post('/reg1',[c1::class,'Register']);
+Route::post('/log',[c1::class,'Login']);
+
+
+// Login Page
+
+<form method="post" action="log">
+    @csrf
+    <table>
+        <tr>
+            <td align="center" colspan="2">
+                Login
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Username
+            </td>
+            <td>
+                <input type="text" name="uname" required>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Password
+            </td>
+            <td>
+                <input type="Password" name="pwd" required>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" colspan="2">
+                <a href="reg">Register</a>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" colspan="2">
+                <input type="submit" name="login" value="Login">
+            </td>
+        </tr>
+    </table>
+</form>
+
+
+// Register.php
+
+<form method="post" action="reg1">
+    @csrf
+    <table>
+        <tr>
+            <td align="center" colspan="2">
+                Register
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Username
+            </td>
+            <td>
+                <input type="text" name="uname" required>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Password
+            </td>
+            <td>
+                <input type="Password" name="pwd" required>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" colspan="2">
+                <a href="welcome">Login</a>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" colspan="2">
+                <input type="submit" name="register" value="Register">
+            </td>
+        </tr>
+    </table>
+</form>
+
+// Home page
+
+<style>
+    table{
+        background: white;
+        border-radius: 8px;
+        margin-top: 5%;
+    }
+    tr,td,th{
+        padding: 25px;
+    }
+    td,th{
+        font-size: 25px;
+    }
+    body{
+        background: lightgray;
+    }
+</style>
+<form method="post" action="/add">
+    @csrf
+    <table align="center">
+        <tr>
+            <td align="center" colspan="2">Add Product</td>
+        </tr>
+        <tr>
+            <td>
+                Product Name
+            </td>
+            <td>
+                <input type="text" name="pname" required>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Product Brand
+            </td>
+            <td>
+                <input type="text" name="pbrand" required>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Product Price
+            </td>
+            <td>
+                <input type="text" name="pprice" required>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" colspan="2">
+                <input type="submit" name="add" value="Add" style="background: deepskyblue;color: white; border-color: white; padding: 15px; cursor: pointer;">
+            </td>
+        </tr>
+    </table>
+</form>
+<h2 align="center">
+<a href="/disp">View Products</a>
+</h2>
+
+// View Products
+
+<style>
+    table{
+        background: white;
+        border-radius: 8px;
+        margin-top: 5%;
+    }
+    tr,td,th{
+        padding: 25px;
+    }
+    td,th{
+        font-size: 25px;
+    }
+    body{
+        background: lightgray;
+    }
+</style>
+<head>
+    <title>
+        Products
+    </title>
+</head>
+<h2 align="center">
+    Products Detail
+</h2>
+<table align="center">
+    <tr>
+        <th>
+            No
+        </th>
+        <th>
+            Name
+        </th>
+        <th>
+            Brand
+        </th>
+        <th>
+            Price
+        </th>
+        <th>
+            Edit
+        </th>
+        <th>
+            Delete
+        </th>
+    </tr>
+    <?php
+    $n = 1;
+    ?>
+    @foreach ($products as $d)
+    <tr>
+        <td>
+            <?php
+                echo $n;
+                $n++;
+            ?>
+        </td>
+        <td>
+            {{$d->P_Name}}
+        </td>
+        <td>
+            {{$d->P_Brand}}
+        </td>
+        <td>
+            {{$d->P_Price}}
+        </td>
+        <td>
+            <a href="edit?id={{$d->id}}">Edit</a>
+        </td>
+        <td>
+            <a href="del?id={{$d->id}}">Delete</a>
+        </td>
+    </tr>
+    @endforeach
+</table>
+<h2 align="center">
+<a href="/home">Add Products</a>
+</h2>
+
+// Edit Page
+
+<form method="post" action="/updt">
+    @csrf
+    <table>
+        <tr>
+            <td>Edit Product</td>
+        </tr>
+        <tr>
+            <td>
+                Product Name
+            </td>
+            <td>
+                <input type="text" name="pname" value="{{$product->P_Name}}" required>
+                <input type="hidden" name="pid" value="{{$product->id}}" required>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Product Brand
+            </td>
+            <td>
+                <input type="text" name="pbrand" value="{{$product->P_Brand}}" required>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Product Price
+            </td>
+            <td>
+                <input type="text" name="pprice" value="{{$product->P_Price}}" required>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input type="submit" name="add" value="Add">
+            </td>
+        </tr>
+    </table>
+</form>
